@@ -3,7 +3,7 @@ import { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged, Use
 import { AddTheaterForm } from '../components/AddTheaterForm';
 import { ScrollToTop } from '../components/ScrollToTop';
 import { motion, AnimatePresence } from 'motion/react';
-import { LogIn, LogOut, Shield, Plus, ArrowLeft, X, Edit2, Trash2, MapPin, Globe, Search, SortAsc, AlertCircle, Film } from 'lucide-react';
+import { LogIn, LogOut, Shield, Plus, ArrowLeft, X, Edit2, Trash2, MapPin, Globe, Search, SortAsc, AlertCircle, Film, ChevronDown } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getTheatersFromMap, deleteTheater } from '../services/theaterService';
 import { Theater } from '../types';
@@ -20,6 +20,7 @@ export default function Admin() {
   const [sortBy, setSortBy] = useState<'name' | 'state'>('name');
   const [showNeedsAttention, setShowNeedsAttention] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   
   const navigate = useNavigate();
 
@@ -82,6 +83,20 @@ export default function Admin() {
            t.lng === null || t.lng === undefined || isNaN(t.lng) ||
            isBlank(t.description) || 
            isBlank(t.website);
+  };
+
+  const getSortName = (name: string) => {
+    if (name.toLowerCase().startsWith('the ')) {
+      return name.substring(4);
+    }
+    return name;
+  };
+
+  const toggleSection = (id: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
   };
 
   const filteredAndSortedTheaters = useMemo(() => {
@@ -237,89 +252,113 @@ export default function Admin() {
                   }, {} as Record<string, Theater[]>)
                 )
                 .sort(([a], [b]) => a.localeCompare(b))
-                .map(([stateName, stateTheaters]) => (
-                  <div key={stateName} className="space-y-4">
-                    <motion.h2 
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="font-display text-2xl text-retro-cyan border-b-2 border-retro-cyan/30 pb-2 flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-5 h-5" />
-                        {stateName}
-                      </div>
-                      <span className="font-retro text-xs bg-retro-cyan/10 px-2 py-1 rounded-md border border-retro-cyan/30">
-                        {stateTheaters.length} {stateTheaters.length === 1 ? 'THEATER' : 'THEATERS'}
-                      </span>
-                    </motion.h2>
-                    <div className="grid grid-cols-1 gap-4">
-                      <AnimatePresence mode="popLayout">
-                        {stateTheaters.map((theater) => (
+                .map(([stateName, stateTheaters]) => {
+                  const isExpanded = expandedSections[stateName];
+                  return (
+                    <div key={stateName} className="space-y-4">
+                      <motion.button 
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        onClick={() => toggleSection(stateName)}
+                        className="w-full font-display text-2xl text-retro-cyan border-b-2 border-retro-cyan/30 pb-2 flex items-center justify-between group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">
                           <motion.div
-                            key={theater.id}
-                            layout
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            className="bg-retro-navy/80 border-2 border-white/10 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 group hover:border-retro-cyan/50 transition-colors"
+                            animate={{ rotate: isExpanded ? 0 : -90 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
                           >
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-display text-xl text-retro-yellow uppercase tracking-wider">{theater.name}</h3>
-                                {hasMissingFields(theater) && (
-                                  <span title="Missing information">
-                                    <AlertCircle className="w-4 h-4 text-retro-pink animate-pulse" />
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-4 mt-1 text-xs text-gray-500 font-sans">
-                                <span className="flex items-center gap-1">
-                                  <MapPin className="w-3 h-3 text-retro-pink" />
-                                  {theater.city}, {theater.state}
-                                </span>
-                                {theater.website && (
-                                  <span className="flex items-center gap-1">
-                                    <Globe className="w-3 h-3 text-retro-cyan" />
-                                    {new URL(theater.website).hostname}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center gap-2 self-end md:self-center">
-                              <button 
-                                onClick={() => {
-                                  setEditingTheater(theater);
-                                  setIsAddFormOpen(true);
-                                }}
-                                className="p-2 bg-retro-cyan/10 text-retro-cyan border border-retro-cyan/30 rounded-lg hover:bg-retro-cyan hover:text-retro-navy transition-all active:scale-90"
-                                title="Edit Theater"
-                              >
-                                <Edit2 className="w-5 h-5" />
-                              </button>
-                              <button 
-                                onClick={() => theater.id && handleDelete(theater.id)}
-                                disabled={isDeleting === theater.id}
-                                className="p-2 bg-retro-pink/10 text-retro-pink border border-retro-pink/30 rounded-lg hover:bg-retro-pink hover:text-white transition-all active:scale-90 disabled:opacity-50"
-                                title="Delete Theater"
-                              >
-                                {isDeleting === theater.id ? (
-                                  <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                                ) : (
-                                  <Trash2 className="w-5 h-5" />
-                                )}
-                              </button>
+                            <ChevronDown className="w-5 h-5 text-retro-pink" />
+                          </motion.div>
+                          <MapPin className="w-5 h-5" />
+                          {stateName}
+                        </div>
+                        <span className="font-retro text-xs bg-retro-cyan/10 px-2 py-1 rounded-md border border-retro-cyan/30 group-hover:bg-retro-cyan/20 transition-colors">
+                          {stateTheaters.length} {stateTheaters.length === 1 ? 'THEATER' : 'THEATERS'}
+                        </span>
+                      </motion.button>
+                      
+                      <AnimatePresence initial={false}>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                            className="overflow-hidden"
+                          >
+                            <div className="grid grid-cols-1 gap-4 pb-4">
+                              <AnimatePresence mode="popLayout">
+                                {stateTheaters.map((theater) => (
+                                  <motion.div
+                                    key={theater.id}
+                                    layout
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 20 }}
+                                    className="bg-retro-navy/80 border-2 border-white/10 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 group hover:border-retro-cyan/50 transition-colors"
+                                  >
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2">
+                                        <h3 className="font-display text-xl text-retro-yellow uppercase tracking-wider">{theater.name}</h3>
+                                        {hasMissingFields(theater) && (
+                                          <span title="Missing information">
+                                            <AlertCircle className="w-4 h-4 text-retro-pink animate-pulse" />
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-4 mt-1 text-xs text-gray-500 font-sans">
+                                        <span className="flex items-center gap-1">
+                                          <MapPin className="w-3 h-3 text-retro-pink" />
+                                          {theater.city}, {theater.state}
+                                        </span>
+                                        {theater.website && (
+                                          <span className="flex items-center gap-1">
+                                            <Globe className="w-3 h-3 text-retro-cyan" />
+                                            {new URL(theater.website).hostname}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-2 self-end md:self-center">
+                                      <button 
+                                        onClick={() => {
+                                          setEditingTheater(theater);
+                                          setIsAddFormOpen(true);
+                                        }}
+                                        className="p-2 bg-retro-cyan/10 text-retro-cyan border border-retro-cyan/30 rounded-lg hover:bg-retro-cyan hover:text-retro-navy transition-all active:scale-90"
+                                        title="Edit Theater"
+                                      >
+                                        <Edit2 className="w-5 h-5" />
+                                      </button>
+                                      <button 
+                                        onClick={() => theater.id && handleDelete(theater.id)}
+                                        disabled={isDeleting === theater.id}
+                                        className="p-2 bg-retro-pink/10 text-retro-pink border border-retro-pink/30 rounded-lg hover:bg-retro-pink hover:text-white transition-all active:scale-90 disabled:opacity-50"
+                                        title="Delete Theater"
+                                      >
+                                        {isDeleting === theater.id ? (
+                                          <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                                        ) : (
+                                          <Trash2 className="w-5 h-5" />
+                                        )}
+                                      </button>
+                                    </div>
+                                  </motion.div>
+                                ))}
+                              </AnimatePresence>
                             </div>
                           </motion.div>
-                        ))}
+                        )}
                       </AnimatePresence>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               ) : sortBy === 'name' ? (
                 Object.entries(
                   filteredAndSortedTheaters.reduce((acc, t) => {
-                    const firstChar = t.name.charAt(0).toUpperCase();
+                    const sortName = getSortName(t.name);
+                    const firstChar = sortName.charAt(0).toUpperCase();
                     const firstLetter = /^[0-9]/.test(firstChar) ? '#' : firstChar;
                     if (!acc[firstLetter]) acc[firstLetter] = [];
                     acc[firstLetter].push(t);
@@ -327,80 +366,108 @@ export default function Admin() {
                   }, {} as Record<string, Theater[]>)
                 )
                 .sort(([a], [b]) => a.localeCompare(b))
-                .map(([letter, letterTheaters]) => (
-                  <div key={letter} className="space-y-4">
-                    <motion.h2 
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="font-display text-2xl text-retro-cyan border-b-2 border-retro-cyan/30 pb-2 flex items-center gap-2"
-                    >
-                      <Film className="w-5 h-5" />
-                      {letter}
-                    </motion.h2>
-                    <div className="grid grid-cols-1 gap-4">
-                      <AnimatePresence mode="popLayout">
-                        {letterTheaters.map((theater) => (
+                .map(([letter, letterTheaters]) => {
+                  const isExpanded = expandedSections[letter];
+                  return (
+                    <div key={letter} className="space-y-4">
+                      <motion.button 
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        onClick={() => toggleSection(letter)}
+                        className="w-full font-display text-2xl text-retro-cyan border-b-2 border-retro-cyan/30 pb-2 flex items-center justify-between group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">
                           <motion.div
-                            key={theater.id}
-                            layout
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            className="bg-retro-navy/80 border-2 border-white/10 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 group hover:border-retro-cyan/50 transition-colors"
+                            animate={{ rotate: isExpanded ? 0 : -90 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
                           >
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-display text-xl text-retro-yellow uppercase tracking-wider">{theater.name}</h3>
-                                {hasMissingFields(theater) && (
-                                  <span title="Missing information">
-                                    <AlertCircle className="w-4 h-4 text-retro-pink animate-pulse" />
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-4 mt-1 text-xs text-gray-500 font-sans">
-                                <span className="flex items-center gap-1">
-                                  <MapPin className="w-3 h-3 text-retro-pink" />
-                                  {theater.city}, {theater.state}
-                                </span>
-                                {theater.website && (
-                                  <span className="flex items-center gap-1">
-                                    <Globe className="w-3 h-3 text-retro-cyan" />
-                                    {new URL(theater.website).hostname}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center gap-2 self-end md:self-center">
-                              <button 
-                                onClick={() => {
-                                  setEditingTheater(theater);
-                                  setIsAddFormOpen(true);
-                                }}
-                                className="p-2 bg-retro-cyan/10 text-retro-cyan border border-retro-cyan/30 rounded-lg hover:bg-retro-cyan hover:text-retro-navy transition-all active:scale-90"
-                                title="Edit Theater"
-                              >
-                                <Edit2 className="w-5 h-5" />
-                              </button>
-                              <button 
-                                onClick={() => theater.id && handleDelete(theater.id)}
-                                disabled={isDeleting === theater.id}
-                                className="p-2 bg-retro-pink/10 text-retro-pink border border-retro-pink/30 rounded-lg hover:bg-retro-pink hover:text-white transition-all active:scale-90 disabled:opacity-50"
-                                title="Delete Theater"
-                              >
-                                {isDeleting === theater.id ? (
-                                  <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                                ) : (
-                                  <Trash2 className="w-5 h-5" />
-                                )}
-                              </button>
+                            <ChevronDown className="w-5 h-5 text-retro-pink" />
+                          </motion.div>
+                          <Film className="w-5 h-5" />
+                          {letter}
+                        </div>
+                        <span className="font-retro text-xs bg-retro-cyan/10 px-2 py-1 rounded-md border border-retro-cyan/30 group-hover:bg-retro-cyan/20 transition-colors">
+                          {letterTheaters.length}
+                        </span>
+                      </motion.button>
+                      
+                      <AnimatePresence initial={false}>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                            className="overflow-hidden"
+                          >
+                            <div className="grid grid-cols-1 gap-4 pb-4">
+                              <AnimatePresence mode="popLayout">
+                                {letterTheaters.map((theater) => (
+                                  <motion.div
+                                    key={theater.id}
+                                    layout
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 20 }}
+                                    className="bg-retro-navy/80 border-2 border-white/10 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 group hover:border-retro-cyan/50 transition-colors"
+                                  >
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2">
+                                        <h3 className="font-display text-xl text-retro-yellow uppercase tracking-wider">{theater.name}</h3>
+                                        {hasMissingFields(theater) && (
+                                          <span title="Missing information">
+                                            <AlertCircle className="w-4 h-4 text-retro-pink animate-pulse" />
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-4 mt-1 text-xs text-gray-500 font-sans">
+                                        <span className="flex items-center gap-1">
+                                          <MapPin className="w-3 h-3 text-retro-pink" />
+                                          {theater.city}, {theater.state}
+                                        </span>
+                                        {theater.website && (
+                                          <span className="flex items-center gap-1">
+                                            <Globe className="w-3 h-3 text-retro-cyan" />
+                                            {new URL(theater.website).hostname}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-2 self-end md:self-center">
+                                      <button 
+                                        onClick={() => {
+                                          setEditingTheater(theater);
+                                          setIsAddFormOpen(true);
+                                        }}
+                                        className="p-2 bg-retro-cyan/10 text-retro-cyan border border-retro-cyan/30 rounded-lg hover:bg-retro-cyan hover:text-retro-navy transition-all active:scale-90"
+                                        title="Edit Theater"
+                                      >
+                                        <Edit2 className="w-5 h-5" />
+                                      </button>
+                                      <button 
+                                        onClick={() => theater.id && handleDelete(theater.id)}
+                                        disabled={isDeleting === theater.id}
+                                        className="p-2 bg-retro-pink/10 text-retro-pink border border-retro-pink/30 rounded-lg hover:bg-retro-pink hover:text-white transition-all active:scale-90 disabled:opacity-50"
+                                        title="Delete Theater"
+                                      >
+                                        {isDeleting === theater.id ? (
+                                          <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                                        ) : (
+                                          <Trash2 className="w-5 h-5" />
+                                        )}
+                                      </button>
+                                    </div>
+                                  </motion.div>
+                                ))}
+                              </AnimatePresence>
                             </div>
                           </motion.div>
-                        ))}
+                        )}
                       </AnimatePresence>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="grid grid-cols-1 gap-4">
                   <AnimatePresence mode="popLayout">

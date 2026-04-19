@@ -45,12 +45,12 @@ const getStateColor = (state: string) => {
     'AL': '#FF00FF', 'AK': '#00FFFF', 'AZ': '#FFFF00', 'AR': '#00FF00', 'CA': '#FF6600',
     'CO': '#FF0066', 'CT': '#00FF99', 'DE': '#9900FF', 'DC': '#3366FF', 'FL': '#CCFF00',
     'GA': '#FF0033', 'HI': '#0099CC', 'ID': '#FFCC00', 'IL': '#CC00FF', 'IN': '#6600FF',
-    'IA': '#00FFCC', 'KS': '#FFD700', 'KY': '#FF7F50', 'LA': '#00BFFF', 'ME': '#DA70D6',
-    'MD': '#ADFF2F', 'MA': '#FF1493', 'MI': '#7FFF00', 'MN': '#00CED1', 'MS': '#FF4500',
+    'IA': '#00FFCC', 'KS': '#FFD700', 'KY': '#FF7F50', 'LA': '#00BFFF', 'ME': '#3366FF',
+    'MD': '#ADFF2F', 'MA': '#FF1493', 'MI': '#7FFF00', 'MN': '#FF0066', 'MS': '#FF4500',
     'MO': '#7B68EE', 'MT': '#00FA9A', 'NE': '#1E90FF', 'NV': '#B0E0E6', 'NH': '#EE82EE',
     'NJ': '#FF00FF', 'NM': '#00FFFF', 'NY': '#FFFF00', 'NC': '#00FF00', 'ND': '#FF6600',
     'OH': '#FF0066', 'OK': '#00FF99', 'OR': '#9900FF', 'PA': '#3366FF', 'RI': '#CCFF00',
-    'SC': '#FF0033', 'SD': '#0099CC', 'TN': '#FFCC00', 'TX': '#CC00FF', 'UT': '#6600FF',
+    'SC': '#FF0033', 'SD': '#0099CC', 'TN': '#00FFCC', 'TX': '#CC00FF', 'UT': '#6600FF',
     'VT': '#00FFCC', 'VA': '#FFD700', 'WA': '#FF7F50', 'WV': '#00BFFF', 'WI': '#DA70D6',
     'WY': '#ADFF2F'
   };
