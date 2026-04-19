@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import React, { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
 import { Theater } from '../types';
 
@@ -41,18 +41,35 @@ const MapResizer = () => {
 };
 
 const getStateColor = (state: string) => {
+  const stateMap: Record<string, string> = {
+    'AL': '#FF00FF', 'AK': '#00FFFF', 'AZ': '#FFFF00', 'AR': '#00FF00', 'CA': '#FF6600',
+    'CO': '#FF0066', 'CT': '#00FF99', 'DE': '#9900FF', 'DC': '#3366FF', 'FL': '#CCFF00',
+    'GA': '#FF0033', 'HI': '#0099CC', 'ID': '#FFCC00', 'IL': '#CC00FF', 'IN': '#6600FF',
+    'IA': '#00FFCC', 'KS': '#FFD700', 'KY': '#FF7F50', 'LA': '#00BFFF', 'ME': '#DA70D6',
+    'MD': '#ADFF2F', 'MA': '#FF1493', 'MI': '#7FFF00', 'MN': '#00CED1', 'MS': '#FF4500',
+    'MO': '#7B68EE', 'MT': '#00FA9A', 'NE': '#1E90FF', 'NV': '#B0E0E6', 'NH': '#EE82EE',
+    'NJ': '#FF00FF', 'NM': '#00FFFF', 'NY': '#FFFF00', 'NC': '#00FF00', 'ND': '#FF6600',
+    'OH': '#FF0066', 'OK': '#00FF99', 'OR': '#9900FF', 'PA': '#3366FF', 'RI': '#CCFF00',
+    'SC': '#FF0033', 'SD': '#0099CC', 'TN': '#FFCC00', 'TX': '#CC00FF', 'UT': '#6600FF',
+    'VT': '#00FFCC', 'VA': '#FFD700', 'WA': '#FF7F50', 'WV': '#00BFFF', 'WI': '#DA70D6',
+    'WY': '#ADFF2F'
+  };
+
+  const normalizedState = state.toUpperCase().trim();
+  
+  // Return mapped color if exists
+  if (stateMap[normalizedState]) {
+    return stateMap[normalizedState];
+  }
+
+  // Fallback palette for state names or unknowns
   const colors = [
-    '#ff00ff', // retro-pink
-    '#00ffff', // retro-cyan
-    '#ffff00', // retro-yellow
-    '#00ff00', // neon-green
-    '#ff6600', // neon-orange
-    '#ff0066', // hot-pink
-    '#00ff99', // seafoam
-    '#9900ff', // purple
+    '#ff00ff', '#00ffff', '#ffff00', '#00ff00', '#ff6600',
+    '#ff0066', '#00ff99', '#9900ff', '#3366ff', '#ccff00',
+    '#ff0033', '#0099cc', '#ffcc00', '#cc00ff', '#6600ff'
   ];
   
-  // Simple hash for state string
+  // Hash for unknown states
   let hash = 0;
   for (let i = 0; i < state.length; i++) {
     hash = state.charCodeAt(i) + ((hash << 5) - hash);
@@ -61,11 +78,52 @@ const getStateColor = (state: string) => {
 };
 
 const TheaterMap: React.FC<TheaterMapProps> = ({ theaters, onTheaterSelect, userLocation }) => {
+  const [geojsonData, setGeojsonData] = useState<any>(null);
   const defaultCenter: [number, number] = [39.8283, -98.5795];
   const zoom = 4;
 
+  useEffect(() => {
+    fetch('https://raw.githubusercontent.com/python-visualization/folium/master/examples/data/us-states.json')
+      .then(res => res.json())
+      .then(data => setGeojsonData(data))
+      .catch(err => console.error("Error loading geojson:", err));
+  }, []);
+
+  // Filter valid theaters and handle overlaps
+  const validTheaters = theaters.filter(t => 
+    typeof t.lat === 'number' && typeof t.lng === 'number' && 
+    !isNaN(t.lat) && !isNaN(t.lng) &&
+    t.lat !== 0 && t.lng !== 0
+  );
+
+  if (validTheaters.length < theaters.length) {
+    console.warn(`[TheaterMap] Skipped ${theaters.length - validTheaters.length} theaters due to invalid or missing coordinates.`);
+  }
+
+  // Handle overlapping coordinates by applying a tiny offset
+  const processedTheaters = validTheaters.map((t, i) => {
+    const isDuplicate = validTheaters.slice(0, i).some(prev => 
+      prev.lat === t.lat && prev.lng === t.lng
+    );
+    
+    if (isDuplicate) {
+      // Apply a tiny random offset to make overlapping markers distinguishible
+      return {
+        ...t,
+        lat: t.lat + (Math.random() - 0.5) * 0.005,
+        lng: t.lng + (Math.random() - 0.5) * 0.005
+      };
+    }
+    return t;
+  });
+
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full relative">
+      {theaters.length > validTheaters.length && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-retro-red/90 text-white text-[10px] px-3 py-1 rounded-full border border-white font-retro animate-pulse">
+          {theaters.length - validTheaters.length} THEATERS HIDDEN (MISSING COORDINATES)
+        </div>
+      )}
       <MapContainer 
         center={userLocation ? [userLocation.lat, userLocation.lng] : defaultCenter} 
         zoom={userLocation ? 6 : zoom} 
@@ -80,11 +138,25 @@ const TheaterMap: React.FC<TheaterMapProps> = ({ theaters, onTheaterSelect, user
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
         
-        {theaters.map((theater, idx) => {
+        {geojsonData && (
+          <GeoJSON 
+            data={geojsonData}
+            style={() => ({
+              color: '#00ffff',
+              weight: 1.5,
+              opacity: 0.8,
+              fillColor: 'transparent',
+              fillOpacity: 0,
+              className: 'state-border-neon'
+            })}
+          />
+        )}
+        
+        {processedTheaters.map((theater, idx) => {
           const color = getStateColor(theater.state);
           return (
             <Marker 
-              key={`${theater.name}-${idx}`} 
+              key={`${theater.id || theater.name}-${idx}`} 
               position={[theater.lat, theater.lng]}
               icon={L.divIcon({
                 className: 'custom-theater-marker',

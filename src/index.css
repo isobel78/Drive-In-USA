@@ -72,6 +72,11 @@ body {
   border: none !important;
 }
 
+.state-border-neon {
+  filter: drop-shadow(0 0 3px var(--color-retro-cyan));
+  pointer-events: none;
+}
+
 div[onClick], [data-clickable] {
   touch-action: manipulation;
 }

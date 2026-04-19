@@ -18,6 +18,10 @@ function saveChoice(value: string) {
   } catch {}
 }
 
+const getSortName = (name: string) => {
+  return name.replace(/^the\s+/i, '');
+};
+
 export default function Home() {
   const [theaters, setTheaters] = useState<Theater[]>([]);
   const [loading, setLoading] = useState(true);
@@ -206,16 +210,16 @@ export default function Home() {
         const distB = calculateDistance(userLocation.lat, userLocation.lng, b.lat, b.lng);
         return distA - distB;
       } else if (sortMethod === 'alphabetical') {
-        return a.name.localeCompare(b.name);
+        return getSortName(a.name).localeCompare(getSortName(b.name));
       } else if (sortMethod === 'state') {
         const stateA = a.state_long || a.state;
         const stateB = b.state_long || b.state;
         const stateCompare = stateA.localeCompare(stateB);
         if (stateCompare !== 0) return stateCompare;
-        return a.name.localeCompare(b.name);
+        return getSortName(a.name).localeCompare(getSortName(b.name));
       }
       // sortMethod is 'nearest' but location not yet acquired — sort alphabetically as interim
-      return a.name.localeCompare(b.name);
+      return getSortName(a.name).localeCompare(getSortName(b.name));
     });
 
     return result;
@@ -518,7 +522,8 @@ export default function Home() {
               ) : sortMethod === 'alphabetical' ? (
                 Object.entries(
                   sortedTheaters.reduce((acc, t) => {
-                    const firstChar = t.name.charAt(0).toUpperCase();
+                    const sortName = getSortName(t.name);
+                    const firstChar = sortName.charAt(0).toUpperCase();
                     const firstLetter = /^[0-9]/.test(firstChar) ? '#' : firstChar;
                     if (!acc[firstLetter]) acc[firstLetter] = [];
                     acc[firstLetter].push(t);
