@@ -9,6 +9,8 @@ import TheaterMap from '../components/TheaterMap';
 import { ScrollToTop } from '../components/ScrollToTop';
 import { calculateDistance } from '../lib/utils';
 import { Link } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
 
 type LocationChoice = 'granted' | 'denied' | 'later' | null;
 
@@ -49,9 +51,58 @@ export default function Home() {
     }));
   };
 
-  const requestLocation = useCallback(() => {
+  const requestLocation = useCallback(async () => {
+    setLoading(true);
+    
+    // Check if running inside a native Capacitor shell
+    if (Capacitor.isNativePlatform()) {
+      try {
+        // Request/check native App Geolocation Permissions
+        let permStatus = await Geolocation.checkPermissions();
+        
+        if (permStatus.location !== 'granted' && permStatus.coarseLocation !== 'granted') {
+          permStatus = await Geolocation.requestPermissions({
+            permissions: ['coarseLocation', 'location']
+          });
+        }
+
+        if (permStatus.location === 'granted' || permStatus.coarseLocation === 'granted') {
+          const position = await Geolocation.getCurrentPosition({
+            enableHighAccuracy: false,
+            timeout: 8000,
+            maximumAge: 60000
+          });
+          
+          const newLoc = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+          setUserLocation(newLoc);
+          setSortMethod('nearest');
+          setShowLocationPrompt(false);
+          setLocationChoice('granted');
+          saveChoice('granted');
+          setError(null);
+        } else {
+          setError("Location access was denied. Please enable it in your device settings to find the nearest theaters.");
+          setLocationChoice('denied');
+          saveChoice('denied');
+          setShowLocationPrompt(false);
+        }
+      } catch (err: any) {
+        console.warn('Capacitor geolocation error:', err);
+        setError(err?.message || "Could not get your location.");
+        setLocationChoice('later');
+        saveChoice('later');
+        setShowLocationPrompt(false);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Fallback to standard Browser Geolocation API
     if (navigator.geolocation) {
-      setLoading(true);
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const newLoc = {
@@ -77,7 +128,6 @@ export default function Home() {
             setLocationChoice('denied');
             saveChoice('denied');
           } else {
-            // For other errors, we might want to let them try again later
             setLocationChoice('later');
             saveChoice('later');
           }
@@ -97,6 +147,7 @@ export default function Home() {
       );
     } else {
       setError("Geolocation is not supported by this browser.");
+      setLoading(false);
     }
   }, []);
 
@@ -301,7 +352,7 @@ export default function Home() {
             <input
               type="text"
               placeholder="Search by name, city, or state..."
-              className="bg-transparent border-none outline-none text-white w-full font-sans placeholder:text-gray-500"
+              className="bg-transparent border-none outline-none text-white w-full font-sans placeholder:text-gray-500 text-base"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
