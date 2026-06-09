@@ -18,8 +18,6 @@ html, body {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: none;
-  overscroll-behavior-y: none;
 }
 
 button, [role="button"], a {
@@ -56,10 +54,6 @@ body {
   transition: all 0.2s;
 }
 
-.retro-button:active {
-  transform: skewX(-10deg) scale(0.95);
-}
-
 @media (hover: hover) {
   .retro-button:hover {
     background: var(--color-retro-cyan);
@@ -67,7 +61,6 @@ body {
     box-shadow: 0 0 15px var(--color-retro-cyan);
   }
 }
-
 
 .user-location-marker {
   background: transparent !important;

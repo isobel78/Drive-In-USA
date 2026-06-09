@@ -196,7 +196,7 @@ export default function Admin() {
                   placeholder="Search theaters..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-retro-navy border-2 border-white/10 focus:border-retro-cyan p-3 pl-10 rounded-xl outline-none transition-all text-base"
+                  className="w-full bg-retro-navy border-2 border-white/10 focus:border-retro-cyan p-3 pl-10 rounded-xl outline-none transition-all"
                 />
               </div>
               
