@@ -1,9 +1,28 @@
-node_modules/
-build/
+.vscode/launch.json
+
+# Credentials — never commit
+api/db.php
+api/config.php
+
+# Build output
 dist/
-coverage/
-.DS_Store
+
+# Dependencies
+node_modules/
+
+# Runtime / logs
 *.log
-.env*
-!.env.example
+
+# macOS artifacts
+.DS_Store
+__MACOSX/
+
+# Archives
+zips/
+
+# Old Google AI stuff
 firebase-applet-config.json
+
+# Env files
+.env
+.env.local

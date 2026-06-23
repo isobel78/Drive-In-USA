@@ -1,0 +1,12 @@
+RewriteEngine On
+RewriteBase /
+
+# Let API requests through to PHP
+RewriteRule ^api/ - [L]
+
+# Let existing files/dirs through (assets, icons, etc.)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Everything else → React app entry point
+RewriteRule ^ index.html [L]

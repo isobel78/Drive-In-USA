@@ -1,7 +1,0 @@
-{
-  "name": "Drive-In USA",
-  "description": "A mobile-first app to find drive-in movie theaters across the USA, featuring location-based search.",
-  "requestFramePermissions": [
-    "geolocation"
-  ]
-}
