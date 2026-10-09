@@ -77,13 +77,26 @@ const getStateColor = (state: string) => {
   return colors[Math.abs(hash) % colors.length];
 };
 
+// CARTO map tiles need a free API key (request one at https://carto.com/basemaps/apikey/).
+// Put it in a file named .env.local in the project root, then rebuild:
+//   VITE_CARTO_API_KEY=your_key_here
+// The key is baked into the built JavaScript, so it is visible to anyone who views the
+// site. It is not a secret; restrict it to your domain in the CARTO dashboard if possible.
+const CARTO_KEY = import.meta.env.VITE_CARTO_API_KEY as string | undefined;
+const TILE_URL =
+  'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' +
+  (CARTO_KEY ? `?key=${encodeURIComponent(CARTO_KEY)}` : '');
+if (!CARTO_KEY) {
+  console.warn('[TheaterMap] VITE_CARTO_API_KEY is not set; map tiles will show an "API key required" watermark.');
+}
+
 const TheaterMap: React.FC<TheaterMapProps> = ({ theaters, onTheaterSelect, userLocation }) => {
   const [geojsonData, setGeojsonData] = useState<any>(null);
   const defaultCenter: [number, number] = [39.8283, -98.5795];
   const zoom = 4;
 
   useEffect(() => {
-    fetch('https://raw.githubusercontent.com/python-visualization/folium/master/examples/data/us-states.json')
+    fetch('/data/us-states.json')
       .then(res => res.json())
       .then(data => setGeojsonData(data))
       .catch(err => console.error("Error loading geojson:", err));
@@ -135,7 +148,7 @@ const TheaterMap: React.FC<TheaterMapProps> = ({ theaters, onTheaterSelect, user
         <MapResizer />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          url={TILE_URL}
         />
         
         {geojsonData && (

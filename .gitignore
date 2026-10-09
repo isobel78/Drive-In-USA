@@ -3,6 +3,7 @@
 # Credentials — never commit
 api/db.php
 api/config.php
+api/error_log
 
 # Build output
 dist/
@@ -25,4 +26,5 @@ firebase-applet-config.json
 
 # Env files
 .env
-.env.local
+.env.*
+!.env.example

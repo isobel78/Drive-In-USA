@@ -10,10 +10,17 @@ CREATE TABLE IF NOT EXISTS theaters (
     state_long  VARCHAR(100)    NOT NULL DEFAULT '',
     lat         DECIMAL(10, 7)  NOT NULL DEFAULT 0,
     lng         DECIMAL(10, 7)  NOT NULL DEFAULT 0,
-    description TEXT            NOT NULL DEFAULT '',
-    website     VARCHAR(500)    NOT NULL DEFAULT '',
+    description TEXT            DEFAULT '',
+    website     VARCHAR(500)    DEFAULT '',
     created_at  TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMP       DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_state (state),
     INDEX idx_name  (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS login_attempts (
+    id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    ip           VARCHAR(45) NOT NULL,
+    attempted_at DATETIME    NOT NULL,
+    INDEX idx_ip_time (ip, attempted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
